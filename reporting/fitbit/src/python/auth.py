@@ -40,11 +40,14 @@ class Auth:
 		self.token['valid_until'] = expiry.strftime(self.datetime_format)
 
 
-	def time_till_token_expiry(self):
+	def seconds_till_token_expiry(self):
 		valid_until = datetime.strptime(self.token['valid_until'], self.datetime_format)
 		now = datetime.now()
-
-		return valid_until - now
+		sign = 1
+		if valid_until < now:
+			sign = -1
+		print("Sign: %d" % sign)
+		return sign * (valid_until - now).seconds
 
 
 	def load_token_from_file(self):
@@ -80,10 +83,8 @@ class Auth:
 			'refresh_token':self.token['refresh_token'],
 		}
 		
-
+		print("Token Refresh")
 		print("endpoint:"+str(endpoint))
-		print("authorisation:" + auth_header)
-
 		try:
 			resp = requests.post(endpoint, headers={'Authorization': auth_header}, data=body)
 			
@@ -108,9 +109,8 @@ class Auth:
 		}
 		
 
+		print("Token Refresh")
 		print("endpoint:"+str(endpoint))
-		print("authorisation:" + auth_header)
-
 		try:
 			resp = requests.post(endpoint, headers={'Authorization': auth_header}, data=body)
 			response = json.loads(resp.text)
@@ -145,9 +145,9 @@ class Auth:
 				print(self.get_user_auth_grant_url())
 				return None
 		else:
-			ttl = self.time_till_token_expiry()
-			print("Time till token expiry: %d" % ttl.seconds)
-			if ttl.seconds <= 0:
+			ttl = self.seconds_till_token_expiry()
+			print("Time till token expiry: %d" % ttl)
+			if ttl <= 0:
 				token_refresh_error = self.refresh_token()
 		
 		return self.token
