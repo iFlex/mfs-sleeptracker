@@ -11,9 +11,6 @@ class Query:
 
 	def update_config(self, config):
 		self.config = config
-		self.query_date_endpoint = config['query_date_endpoint']
-		self.query_range_endpoint = config['query_range_endpoint']
-		self.query_list_endpoint = config['query_list_endpoint']
 		self.date_format = config['date_format']
 
 
@@ -29,6 +26,7 @@ class Query:
 		print("Datasource Response: %s " % response)
 		if response.status_code == 200:
 			print("Raw data length %sB" % len(response.text))
+			#print(response.text)
 			return json.loads(response.text)
 		else:
 			print(response.text)
@@ -63,7 +61,19 @@ class Query:
 		return (self.parametrise_endpoint(self.query_date_endpoint, self.config['parameters'], local_context), self.config['method'])
 
 
-	def query(self, scope_item, date):
+	def query(self, scope_item, sd, ed=None):
+		if scope_item in self.config:
+			if 'range_endpoint' in self.config[scope_item]:
+				return self.query_range(scope_item, sd, ed)
+			else:
+				if ed != None:
+					print("warning: Feed '%s' does not support range queries, attempting a single date query using start_date %s" % (scope_item, sd))
+				return self.query_date(scope_item, sd)
+		else:
+			raise Exception("Unknown feed '%s'" % scope_item)
+
+
+	def query_date(self, scope_item, date):
 		auth_token = self.get_token()
 		endpoint, method = self.get_endpoint(scope_item, 'date_endpoint', {
 			"feed_name":scope_item, 
@@ -81,7 +91,7 @@ class Query:
 		return self.return_query_result(r)
 		
 
-	def query_range(self, scope_item, start_date, end_date):
+	def query_range(self, scope_item, start_date, end_date):	
 		auth_token = self.get_token()
 		time_fromat = "%H:%M"
 		endpoint, method = self.get_endpoint(scope_item, 'range_endpoint', {

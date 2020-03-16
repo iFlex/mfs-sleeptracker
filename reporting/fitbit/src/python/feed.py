@@ -36,7 +36,7 @@ class FeedManager:
 	2. next - the next block of data following what was last written in the datasync for this feed
 	3. custom - custom datetime provided by user
 	'''
-	def update_feed(self, feed_name, mode=None, query_datetime=None):
+	def update_feed(self, feed_name, mode=None, start_date=None, end_date=None):
 		config = self.feeds[feed_name]
 
 		if 'mode' in config and mode == None:
@@ -49,15 +49,16 @@ class FeedManager:
 		
 		
 		granularity = config['granularity']
-		if mode == 'latest':
-			query_datetime = datetime.now()
-		elif mode == 'next':
-			query_datetime = self.datasync.get_last_timestamp(feed_name, self.translator.get_user())
-			print("Last record of %s in database is from %s" % (feed_name,query_datetime))
-
 		granularity_delta = self.granularity_to_timedelta(granularity)
-		start_date = query_datetime
-		end_date   = start_date + granularity_delta
+		
+		if mode == 'latest':
+			start_date = datetime.now()
+		elif mode == 'next':
+			start_date = self.datasync.get_last_timestamp(feed_name, self.translator.get_user())
+			print("Last record of %s in database is from %s" % (feed_name,start_date))
+
+		if mode != 'custom':
+			end_date   = start_date + granularity_delta
 		
 		if 'delay' in config and mode != 'custom':
 			print("Checking for data delay requirement")
@@ -73,11 +74,7 @@ class FeedManager:
 				start_date = end_date - granularity_delta
 
 		print("Updating feed %s mode:%s - for datetime: %s to datetime: %s" % (feed_name, mode,start_date,end_date))
-		
-		if granularity == 'day':
-			data = self.datasource.query(feed_name, start_date)
-		else:
-			data = self.datasource.query_range(feed_name, start_date, end_date)
+		data = self.datasource.query(feed_name, start_date, end_date)
 		
 		if data != None:
 			translated = self.translator.translate(data, feed_name)
