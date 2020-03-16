@@ -1,6 +1,8 @@
-# mfs-sleeptracker
+# mfs-fitness
 
-Service that pulls fitness data from FitBit and insert it into InfluxDB.
+Service that reports on fitness data and pulls it from various sources
+First implemented source is FitBit
+Second source is a manual insert frontend
 
 Requirements:
 1. External Scheduling

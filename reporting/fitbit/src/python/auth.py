@@ -8,9 +8,8 @@ from datetime import datetime, timedelta
 
 class Auth:
 	
-	def __init__(self, config, scope):
+	def __init__(self, config):
 		self.update_config(config)
-		self.scope = scope
 		self.token = None
 		self.datetime_format = "%Y-%m-%d-%H:%M:%S"
 
@@ -23,6 +22,7 @@ class Auth:
 		self.client_secret = config['client_secret']
 		self.auth_code = config['auth_code']
 		self.redirect_uri = config['redirect_uri']
+		self.scope = config['scope']
 
 
 	def is_token_valid(self):
@@ -46,7 +46,7 @@ class Auth:
 		sign = 1
 		if valid_until < now:
 			sign = -1
-		print("Sign: %d" % sign)
+		
 		return sign * (valid_until - now).seconds
 
 
@@ -109,7 +109,7 @@ class Auth:
 		}
 		
 
-		print("Token Refresh")
+		print("Token Request")
 		print("endpoint:"+str(endpoint))
 		try:
 			resp = requests.post(endpoint, headers={'Authorization': auth_header}, data=body)
@@ -118,6 +118,7 @@ class Auth:
 
 			if resp.status_code == 200:
 				self.token = json.loads(resp.text)
+				self.token['scope'] = self.scope
 				self.save_token_to_file()
 			else:
 				return response.text
@@ -132,13 +133,16 @@ class Auth:
 			'client_id': self.client_id, 
 			'redirect_uri': self.redirect_uri, 
 			'scope': " ".join(self.scope)
-		})
+		}, quote_via=urllib.parse.quote)
 		return "%s?%s" % (self.authorise_uri, params)
 
 
 	def get_token(self):
 		error = self.load_token_from_file()
 		if error:
+			print("Failed loading token from file")
+			print(error)
+
 			token_error = self.request_token()
 			if token_error != None:
 				print("Please authorise this application to obtain a new token by visiting:")
@@ -151,19 +155,3 @@ class Auth:
 				token_refresh_error = self.refresh_token()
 		
 		return self.token
-'''
-def query(token, user, date):
-	url = 'https://api.fitbit.com/1.2/user/%s/sleep/date/%s.json' % (user,date)
-	auth_header = 'Bearer %s' % token
-	resp = requests.get(url,headers={'Authorization': auth_header})
-	print(resp)
-	return resp.text
-
-def query_range(token, user, startd, endd):
-	#GET https://api.fitbit.com/1.2/user/[user-id]/sleep/date/[startDate]/[endDate].json
-	url = 'https://api.fitbit.com/1.2/user/%s/sleep/date/%s/%s.json' % (user,startd,endd)
-	auth_header = 'Bearer %s' % token
-	resp = requests.get(url,headers={'Authorization': auth_header})
-	print(resp)
-	return resp.text
-'''

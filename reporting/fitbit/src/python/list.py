@@ -4,6 +4,7 @@ from auth import Auth
 from query import Query
 from data import Translator
 from influx_feeder import InfluxDBFeeder
+import json
 
 with open("config.json","r") as f:
 	config = json.loads(f.read())
@@ -13,10 +14,6 @@ query = Query(config['query'], auth)
 translator = Translator()
 database = InfluxDBFeeder(config['influxdb'])
 
-last_night = query.query('sleep', sys.argv[1])
-if last_night != None:
-	translated = translator.translate(last_night, "", "")
-	print(translated)
-	database.write([translated])
-else:
-	print("Could not load last night")
+data = query.list_before('sleep','2018-12-31')
+with open("sleep_list.json","w") as f:
+	f.write(json.dumps(data))
