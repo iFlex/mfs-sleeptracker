@@ -26,7 +26,9 @@ class Query:
 
 
 	def return_query_result(self, response):
+		print("Datasource Response: %s " % response)
 		if response.status_code == 200:
+			print("Raw data length %sB" % len(response.text))
 			return json.loads(response.text)
 		else:
 			print(response.text)

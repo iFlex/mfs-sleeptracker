@@ -20,6 +20,7 @@ class InfluxDBFeeder:
 
 
 	def write(self, data):
+		print("Writing %d records to the database" % len(data))
 		self.client.write_points(data)
 
 

@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 
 class Translator:
 	
@@ -65,22 +67,38 @@ class Translator:
 
 		return result
 
-
+	#Got to account for the fact that fitbit's endpoint just passes midnight and the time field just resets
 	def translate_heartrate_record(self, data):
+		print(data)
 		result = []
-		date = data['activities-heart'][0]['dateTime']
+
+		date_format = "%Y-%m-%d"
+		pass_midnight = timedelta(days=1)
+		date = datetime.strptime(data['activities-heart'][0]['dateTime'], date_format)
+		strdate = date.strftime(date_format)
+		previous_hour = None
+		current_houry = None
+
+		#assuming measurements are in chronological order (cuz otherwise... the endpoint is broken)
 		measurements = data['activities-heart-intraday']['dataset']
-		
 		for measurement in measurements:
+			#assuming time is always HH:mm
+			current_hour = int(measurement['time'].split(":")[0])
+			if previous_hour != None and current_hour < previous_hour:
+				#midnight passed
+				date += pass_midnight
+				strdate = date.strftime(date_format)
+			previous_hour = current_hour
+			
 			result.append({
-	        "measurement": "heartrate",
-	        "tags": {
-	            "person": self.user
-	        },
-	        "time": date + "T" + measurement['time'] + "Z",
-	        "fields": {
-	            "value": float(measurement['value']),
-	        }
-    	})
-		
+		        "measurement": "heartrate",
+		        "tags": {
+		            "person": self.user
+		        },
+		        "time": strdate + "T" + measurement['time'] + "Z",
+		        "fields": {
+		            "value": float(measurement['value']),
+		        }
+    		})
+
 		return result
