@@ -50,28 +50,20 @@ class FeedManager:
 		
 		granularity = config['granularity']
 		granularity_delta = self.granularity_to_timedelta(granularity)
-		
+		delay = timedelta(seconds=0)
+		if 'delay' in config
+			delay = timedelta(seconds=config['delay'])
+
 		if mode == 'latest':
-			start_date = datetime.now()
+			end_date = datetime.now() - delay
+			start_date = end_date - granularity_delta
 		elif mode == 'next':
 			start_date = self.datasync.get_last_timestamp(feed_name, self.translator.get_user())
+			end_date = datetime.now() - delay
 			print("Last record of %s in database is from %s" % (feed_name,start_date))
-
-		if mode != 'custom':
-			end_date   = start_date + granularity_delta
-		
-		if 'delay' in config and mode != 'custom':
-			print("Checking for data delay requirement")
-			now = datetime.now()
-			delta = now - end_date
-
-			if end_date >= now or delta.seconds < config['delay']:
-				print("Applying data delay")
-				delay = timedelta(seconds=config['delay'])
-				end_date = now - delay
-				#for now simply roll back the start date by the default granularity (
-				#assumption is that the DB will just overwrite the data if there's any overlap)
-				start_date = end_date - granularity_delta
+			if end_date < start_date:
+				print("Database contains the latest data within configured delay");
+				return
 
 		print("Updating feed %s mode:%s - for datetime: %s to datetime: %s" % (feed_name, mode,start_date,end_date))
 		data = self.datasource.query(feed_name, start_date, end_date)

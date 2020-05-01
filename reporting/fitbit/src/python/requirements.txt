@@ -1,2 +1,4 @@
 requests
 influxdb
+pytest
+mockito
