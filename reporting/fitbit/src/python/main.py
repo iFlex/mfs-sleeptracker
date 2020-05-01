@@ -74,7 +74,7 @@ def update_feeds(arguments):
     if len(arguments) > 0:
         for argument in arguments:
             try:
-                
+                #[0] feed_name [1] mode [2] start date [3] end date
                 if len(argument) == 1:
                     feed_manager.update_feed(argument[0])
                 
@@ -82,10 +82,10 @@ def update_feeds(arguments):
                     if feed_manager.is_valid_update_mode(argument[1]):
                         feed_manager.update_feed(argument[0], argument[1])
                     else:
-                        feed_manager.update_feed(argument[0],'custom', argument[1])
+                        feed_manager.update_feed(argument[0], 'custom', argument[1])
                 
                 if len(argument) == 3:
-                    feed_manager.update_feed(argument[0],'custom', argument[1], argument[2])
+                    feed_manager.update_feed(argument[0], 'custom', argument[1], argument[2])
 
             except Exception as e:
                 print("Failure")

@@ -38,26 +38,24 @@ class FeedManager:
 	'''
 	def update_feed(self, feed_name, mode=None, start_date=None, end_date=None):
 		config = self.feeds[feed_name]
-
-		if 'mode' in config and mode == None:
+		print("UPDATE_CALL feed: %s mode:%s start:%s end:%s" %(feed_name,mode,start_date,end_date))
+		#If not mode override was passed in, use the one in config
+		if mode == None:
 			mode = config['mode']
-		elif mode == None:
+		if mode == None:
 			mode = 'latest'
 
 		if not self.is_valid_update_mode(mode):
 			raise Exception("Invalid update mode '%s'" % mode)
 		
-		
-		granularity = config['granularity']
-		granularity_delta = self.granularity_to_timedelta(granularity)
-		delay = timedelta(seconds=0)
-		if 'delay' in config
-			delay = timedelta(seconds=config['delay'])
+		granularity_delta = self.granularity_to_timedelta(config.get('granularity',''))
+		delay = timedelta(seconds=config.get('delay',0))
 
 		if mode == 'latest':
 			end_date = datetime.now() - delay
 			start_date = end_date - granularity_delta
 		elif mode == 'next':
+			#Treat the case when the interval is too large (cap it) then try latest and leave gat - do backfilling when appropriate
 			start_date = self.datasync.get_last_timestamp(feed_name, self.translator.get_user())
 			end_date = datetime.now() - delay
 			print("Last record of %s in database is from %s" % (feed_name,start_date))
@@ -65,7 +63,7 @@ class FeedManager:
 				print("Database contains the latest data within configured delay");
 				return
 
-		print("Updating feed %s mode:%s - for datetime: %s to datetime: %s" % (feed_name, mode,start_date,end_date))
+		print("Updating feed %s mode:%s - from datetime: %s to datetime: %s" % (feed_name, mode,start_date,end_date))
 		data = self.datasource.query(feed_name, start_date, end_date)
 		
 		if data != None:
@@ -74,8 +72,8 @@ class FeedManager:
 		else:
 			print("Failed to fetch %s data for %s" % (feed_name, start_date))
 
-
-	def update(self, feeds=[], mode='latest'):	
+	#update feeds with their default modes
+	def update(self, feeds=[]):	
 		if feeds == None or len(feeds) == 0:
 			feeds = self.feeds.keys()
 		
