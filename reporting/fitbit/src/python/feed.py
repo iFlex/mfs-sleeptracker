@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import traceback
 
 class FeedManager:
 
@@ -36,8 +37,7 @@ class FeedManager:
 	2. next - the next block of data following what was last written in the datasync for this feed
 	3. custom - custom datetime provided by user
 	'''
-	def update_feed(self, feed_name, mode=None, start_date=None, end_date=None):
-		config = self.feeds[feed_name]
+	def _update_feed(self, config, feed_name, mode=None, start_date=None, end_date=None):
 		print("UPDATE_CALL feed: %s mode:%s start:%s end:%s" %(feed_name,mode,start_date,end_date))
 		#If not mode override was passed in, use the one in config
 		if mode == None:
@@ -71,6 +71,22 @@ class FeedManager:
 			self.datasync.write(translated)
 		else:
 			print("Failed to fetch %s data for %s" % (feed_name, start_date))
+			raise Exception("Failed to fetch data")
+
+	def update_feed(self, feed_name, mode=None, start_date=None, end_date=None):
+		config = self.feeds[feed_name]
+		fallback_mode = config.get('fallback_mode', None)
+
+		try:
+			self._update_feed(config, feed_name, mode, start_date, end_date)
+		except Exception as e:
+			print("Update feed failed.")
+			traceback.print_exc(file=sys.stdout)
+			if fallback_mode == None:
+				raise e
+			else:
+				print("Attempting fallback")
+				self._update_feed(config, feed_name, fallback_mode, start_date, end_date)			
 
 	#update feeds with their default modes
 	def update(self, feeds=[]):	

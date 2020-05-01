@@ -9,7 +9,9 @@ from influx_feeder import InfluxDBFeeder
 from datetime import datetime
 import traceback
 
-
+'''
+python3 main.py [feed_name]::[mode]::<start_date>::<end_date>
+'''
 with open("config.json","r") as f:
     config = json.loads(f.read())
 
@@ -90,6 +92,7 @@ def update_feeds(arguments):
             except Exception as e:
                 print("Failure")
                 traceback.print_exc(file=sys.stdout)
+
     else:
         feed_manager.update()
 
